@@ -1,0 +1,18 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ensure sub-projects use their own gitignores, but globally ignore common things
+node_modules/
+dist/
+target/
+deploy-plan.md
