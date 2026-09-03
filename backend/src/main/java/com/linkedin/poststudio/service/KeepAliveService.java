@@ -1,87 +1,60 @@
 package com.linkedin.poststudio.service;
 
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import org.springframework.web.client.RestClient;
 
 /**
- * Internal keep-alive for Render's free tier.
+ * Self-pings the public /api/health endpoint every 14 minutes when deployed to
+ * Render (or any platform that injects the public URL into RENDER_EXTERNAL_URL).
+ * This keeps the free-tier instance warm so users never see the 30-60s cold start
+ * on first request after 15 min of inactivity.
  *
- * <p>Render spins down a free-tier service after 15 minutes of inactivity.
- * To prevent the first user request from suffering a 30-60s cold start, we
- * self-ping the public URL every 14 minutes. Render sees this as real
- * traffic (it comes from the container's outbound network) and keeps the
- * instance warm.</p>
- *
- * <p>Configuration:</p>
- * <ul>
- *   <li>Disabled when the env var {@code RENDER_EXTERNAL_URL} is absent
- *       (e.g. local dev), so the scheduler doesn't try to ping a localhost URL</li>
- *   <li>Runs on the standard Spring cron expression (every 14 minutes)</li>
- *   <li>10-second timeout per ping -- failure is logged but never throws</li>
- * </ul>
+ * Behaviour:
+ *  - Production (RENDER_EXTERNAL_URL set): ping every 14 minutes, log success/failure.
+ *  - Local dev (no env var): disable silently, log once, never ping.
+ *  - All exceptions are caught and logged; a failed ping can never crash the app.
  */
 @Service
-@Slf4j
 public class KeepAliveService {
+
+    private static final Logger log = LoggerFactory.getLogger(KeepAliveService.class);
+    private static final long FOURTEEN_MINUTES_MS = 14L * 60L * 1000L;
 
     @Value("${RENDER_EXTERNAL_URL:}")
     private String renderExternalUrl;
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
-
-    private boolean enabled;
+    private final RestClient http = RestClient.create();
 
     @PostConstruct
     void init() {
-        enabled = renderExternalUrl != null
-                && !renderExternalUrl.isBlank()
-                && renderExternalUrl.startsWith("http");
-
-        if (enabled) {
-            log.info("Keep-alive ENABLED. Will self-ping {} every 14 minutes.", renderExternalUrl);
+        if (renderExternalUrl == null || renderExternalUrl.isBlank()) {
+            log.info("Keep-alive DISABLED. Set RENDER_EXTERNAL_URL to enable self-ping in production.");
         } else {
-            log.info("Keep-alive DISABLED (RENDER_EXTERNAL_URL not set). "
-                    + "This is normal for local development.");
+            String target = renderExternalUrl + "/api/health";
+            log.info("Keep-alive ENABLED. Will self-ping {} every 14 minutes.", target);
         }
     }
 
     /**
-     * Pings the public /api/health endpoint every 14 minutes.
-     * Render injects the public URL into the RENDER_EXTERNAL_URL env var.
+     * Pings /api/health every 14 minutes. Cron: at minute 0 of every 14th hour,
+     * plus a fixed delay of 14 minutes between runs.
      */
-    @Scheduled(cron = "0 */14 * * *")
+    @Scheduled(initialDelayString = "0", fixedDelayString = "PT14M")
     public void pingSelf() {
-        if (!enabled) return;
-
+        if (renderExternalUrl == null || renderExternalUrl.isBlank()) {
+            return; // local dev - no-op
+        }
         String url = renderExternalUrl + "/api/health";
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(10))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            int status = response.statusCode();
-            if (status >= 200 && status < 300) {
-                log.debug("Keep-alive ping OK: {} ({}ms)", status, response.statusCode());
-            } else {
-                log.warn("Keep-alive ping returned non-2xx status: {}", status);
-            }
+            int status = http.get().uri(url).retrieve().toBodilessEntity().getStatusCode().value();
+            log.info("Keep-alive ping OK: {} -> {}", url, status);
         } catch (Exception e) {
-            // Never let a keep-alive failure crash the app
-            log.warn("Keep-alive ping failed: {}", e.getMessage());
+            log.warn("Keep-alive ping FAILED for {} : {}", url, e.getMessage());
         }
     }
 }
