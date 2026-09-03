@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEditorStore } from '../../store/editor-store';
 import { formatTextWithAi } from '../../lib/ai/client';
 
@@ -14,6 +14,18 @@ export default function AiFormatPanel() {
   const [customInstructions, setCustomInstructions] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Live timer while formatting — gives the user feedback that something is happening
+  useEffect(() => {
+    if (!isFormatting) {
+      setElapsed(0);
+      return;
+    }
+    const start = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 500);
+    return () => clearInterval(id);
+  }, [isFormatting]);
 
   const handleFormat = async () => {
     if (!document.sourceText.trim()) {
@@ -90,7 +102,7 @@ export default function AiFormatPanel() {
           >
             {showAdvanced ? 'Hide Options' : 'Custom Instructions'}
           </button>
-          
+
           <button
             type="button"
             className={`btn btn-primary ai-submit-btn ${isFormatting ? 'loading' : ''}`}
@@ -104,10 +116,18 @@ export default function AiFormatPanel() {
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
             )}
-            {isFormatting ? 'Formatting...' : 'Format with AI'}
+            {isFormatting ? `Formatting… ${elapsed}s` : 'Format with AI'}
           </button>
         </div>
-        
+
+        {isFormatting && elapsed >= 10 && (
+          <div className="ai-status">
+            {elapsed < 30 && 'Analyzing your post…'}
+            {elapsed >= 30 && elapsed < 60 && 'Still working — first request can be slow while the model warms up…'}
+            {elapsed >= 60 && 'This is taking longer than usual. Cold starts can take up to 2 minutes — hang tight…'}
+          </div>
+        )}
+
         {error && <div className="ai-error">{error}</div>}
       </div>
     </div>

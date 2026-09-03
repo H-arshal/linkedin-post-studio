@@ -1059,6 +1059,15 @@ body {
   background: var(--color-danger-soft);
 }
 
+.ai-status {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-xs);
+  padding: 6px 8px;
+  background: var(--color-surface-2);
+  border-left: 2px solid var(--color-text-muted);
+  font-style: italic;
+}
+
 .spinner {
   display: inline-block;
   width: 12px;
