@@ -25,4 +25,14 @@ public class HealthController {
                         "service", "LinkedIn Post Studio Backend"
                 ));
     }
+
+    /**
+     * Returns an empty 204 for /favicon.ico so browsers and Render's health
+     * probes don't trigger a NoResourceFoundException 404 in the logs.
+     * The actual favicon is served by the frontend (GitHub Pages).
+     */
+    @GetMapping("/favicon.ico")
+    public ResponseEntity<Void> favicon() {
+        return ResponseEntity.noContent().build();
+    }
 }
