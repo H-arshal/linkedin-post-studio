@@ -1,0 +1,30 @@
+# Files/dirs that should NOT be sent to the Docker build context
+# Smaller context = faster build, smaller attack surface
+
+# Maven build output
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE / OS
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docs
+README.md
+*.md
+docs/
+
+# Docker self-reference (avoid recursion)
+Dockerfile
+.dockerignore
+
+# Local dev secrets
+src/main/resources/application-dev.properties
