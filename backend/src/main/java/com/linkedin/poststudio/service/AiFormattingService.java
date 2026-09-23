@@ -5,7 +5,6 @@ import com.linkedin.poststudio.dto.FormatRequest;
 import com.linkedin.poststudio.dto.FormatResponse;
 import com.linkedin.poststudio.dto.FormatResponse.FormattingPlan;
 import com.openai.client.OpenAIClient;
-import com.openai.models.ChatModel;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import lombok.RequiredArgsConstructor;

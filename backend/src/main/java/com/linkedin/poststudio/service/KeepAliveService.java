@@ -23,7 +23,7 @@ import org.springframework.web.client.RestClient;
 public class KeepAliveService {
 
     private static final Logger log = LoggerFactory.getLogger(KeepAliveService.class);
-    private static final long FOURTEEN_MINUTES_MS = 14L * 60L * 1000L;
+    private static final long FOURTEEN_MINUTES_MS = 30L * 60L * 1000L;
 
     @Value("${RENDER_EXTERNAL_URL:}")
     private String renderExternalUrl;

@@ -140,11 +140,54 @@ const DOUBLE_STRUCK_MAP: Record<string, string> = {
   ...DOUBLE_STRUCK_DIGITS,
 };
 
+// ─── Script (Mathematical Script) ────────────────────────────────
+const SCRIPT_UPPER = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String.fromCodePoint(65 + i), String.fromCodePoint(0x1d49c + i)])
+);
+const SCRIPT_LOWER = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => {
+    const overrides: Record<number, number> = { 7: 0x210e };
+    const cp = overrides[i] ?? 0x1d4d0 + i;
+    return [String.fromCodePoint(97 + i), String.fromCodePoint(cp)];
+  })
+);
+const SCRIPT_DIGITS = Object.fromEntries(
+  Array.from({ length: 10 }, (_, i) => [String(i), String.fromCodePoint(0x1d7ce + i)])
+);
+const SCRIPT_MAP: Record<string, string> = { ...SCRIPT_UPPER, ...SCRIPT_LOWER, ...SCRIPT_DIGITS };
+
+// ─── Gothic / Fraktur ────────────────────────────────────────────
+const GOTHIC_UPPER = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String.fromCodePoint(65 + i), String.fromCodePoint(0x1d56c + i)])
+);
+const GOTHIC_LOWER = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String.fromCodePoint(97 + i), String.fromCodePoint(0x1d586 + i)])
+);
+const GOTHIC_DIGITS = Object.fromEntries(
+  Array.from({ length: 10 }, (_, i) => [String(i), String.fromCodePoint(0x1d7ce + i)])
+);
+const GOTHIC_MAP: Record<string, string> = { ...GOTHIC_UPPER, ...GOTHIC_LOWER, ...GOTHIC_DIGITS };
+
+// ─── Monospace ───────────────────────────────────────────────────
+const MONOSPACE_UPPER = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String.fromCodePoint(65 + i), String.fromCodePoint(0x1d670 + i)])
+);
+const MONOSPACE_LOWER = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String.fromCodePoint(97 + i), String.fromCodePoint(0x1d6a2 + i)])
+);
+const MONOSPACE_DIGITS = Object.fromEntries(
+  Array.from({ length: 10 }, (_, i) => [String(i), String.fromCodePoint(0x1d7f6 + i)])
+);
+const MONOSPACE_MAP: Record<string, string> = { ...MONOSPACE_UPPER, ...MONOSPACE_LOWER, ...MONOSPACE_DIGITS };
+
 // ─── Style → Map lookup ─────────────────────────────────────────
 const STYLE_MAPS: Record<string, Record<string, string>> = {
   bold: BOLD_MAP,
   italic: ITALIC_MAP,
   boldItalic: BOLD_ITALIC_MAP,
+  script: SCRIPT_MAP,
+  gothic: GOTHIC_MAP,
+  monospace: MONOSPACE_MAP,
   sansSerif: SANS_SERIF_MAP,
   smallCaps: SMALL_CAPS_MAP,
   doubleStruck: DOUBLE_STRUCK_MAP,
